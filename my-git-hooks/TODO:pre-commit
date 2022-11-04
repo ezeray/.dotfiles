@@ -1,0 +1,8 @@
+# The main idea here is to ensure that before each commit, the files that
+# were modified pass the following tests:
+#
+#  - linter: sqlfluff for our sql models in dbt
+#  - for dbt models: dbt run & dbt test?
+#  - for python code: linting and if there are tests run those tests -- how to
+#      implement this.
+
