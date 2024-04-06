@@ -1,0 +1,58 @@
+#!/bin/bash
+#
+# An example hook script to verify what is about to be committed.
+# Called by "git merge" with no arguments.  The hook should
+# exit with non-zero status after issuing an appropriate message to
+# stderr if it wants to stop the merge commit.
+#
+# To enable this hook, rename this file to "pre-merge-commit".
+
+. git-sh-setup
+test -x "$GIT_DIR/hooks/pre-commit" &&
+        exec "$GIT_DIR/hooks/pre-commit"
+:
+
+function reset_merge_after() {
+    sleep 2;
+    my_path=${GIT_DIR:0:${#GIT_DIR}-5};
+    echo "executing git reset --merge";
+    git --git-dir ${GIT_DIR} --work-tree ${my_path} reset --merge;
+}
+
+
+FORBIDDEN="develop"
+CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
+
+
+# echo "forbidden ${FORBIDDEN}"
+# echo "current ${CURRENT_BRANCH}"
+# echo "git reflog action ${GIT_REFLOG_ACTION}"
+
+if [[ "${GIT_REFLOG_ACTION}" == *merge* ]] || [[ "${GIT_REFLOG_ACTION}" == *pull* ]];
+then
+    is_forbidden=$(echo ${GIT_REFLOG_ACTION} | grep -E "\b${FORBIDDEN}\b|\borigin/${FORBIDDEN}\b" | wc -l)
+    if [[ ${is_forbidden} -gt 0 ]]; then
+    # if [[ ${GIT_REFLOG_ACTION} == *${FORBIDDEN}* ]]; then
+        printf "##\n"
+        printf "## FORBIDDEN MERGE!!!\n"
+        printf "##\n"
+        printf "## You are attempting to merge the forbidden  ${FORBIDDEN}"
+        printf "into the target branch ${CURRENT_BRANCH}!!!\n"
+        printf "##\n"
+        printf "## This is not allowed!!!\n"
+        printf "##\n"
+        printf "## The following command will be executed in 2 seconds to "
+        printf "reset your branch to before the merge.\n"
+        printf "##\n"
+        printf "## git reset --merge"
+        printf "##\n"
+        printf "## You can check with git status if it was properly reset.\n"
+        printf "## If it failed, please execute the command manually."
+        printf "\n\n"
+
+        reset_merge_after &
+
+        exit 1
+        
+    fi
+fi

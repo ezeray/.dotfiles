@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # An example hook script to check the commit log message.
 # Called by "git commit" with one argument, the name of the file
@@ -23,17 +23,34 @@
 # 	exit 1
 # }
 
-name=$(git branch --show-current)
-msg=$(cat $1)
-first_line=$(echo ${msg} | cut -d ' ' -f 1)
+# MSG_FILE=$1
 
-if [[ -z msg ]]; then
-    echo "Aborting commit due to empty commit message."
-    exit 1
-elif [[ ${name} = ${first_line} ]]; then
-    printf "${msg}" > $1
-else
-    printf "${name}\n\n${msg}" > $1
-fi
+# count_added=$( grep -E "^added - " ${MSG_FILE} | wc -l)
+# count_added_without_comment=$( grep -E "^added - \b(.*)\b\:(\s+)?$" ${MSG_FILE} | wc -l)
 
+# if [[ ${count_added} -gt 0 ]] && [[ ${count_added_without_comment} -gt 0 ]]; then
+#     echo "There are new files added that have no commit message detailing changes"
+#     TMP_FILE=~/.tmp_aborted_commit_msg
+#     cat ${MSG_FILE} > ${TMP_FILE}
+#     exit 1
+# fi
 
+# count_changes=$( grep -E "^modified - " ${MSG_FILE} | wc -l)
+# count_changes_without_comment=$( grep -E "^modified - \b(.*)\b\:(\s+)?$" ${MSG_FILE} | wc -l)
+
+# if [[ ${count_changes} -gt 0 ]] && [[ ${count_changes_without_comment} -gt 0 ]]; then
+#     echo "There are files modified that have no commit message detailing changes"
+#     TMP_FILE=~/.tmp_aborted_commit_msg
+#     cat ${MSG_FILE} > ${TMP_FILE}
+#     exit 1
+# fi
+
+# count_renames=$(grep -E "^renamed" ${MSG_FILE} | wc -l)
+# count_renames_without_comment=$(grep -E "^renamed - \b(.*)\b\:(\s+)?$" ${MSG_FILE}| wc -l)
+
+# if [[ ${count_renames} -gt 0 ]] && [[ ${count_renames_without_comment} -gt 0 ]]; then
+#     echo "There are files renamed that have no commit message detailing renaming"
+#     TMP_FILE=~/.tmp_aborted_commit_msg
+#     cat ${MSG_FILE} > ${TMP_FILE}
+#     exit 1
+# fi
