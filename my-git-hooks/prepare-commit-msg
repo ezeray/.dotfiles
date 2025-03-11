@@ -58,6 +58,7 @@ if [[ "${COMMIT_SOURCE}" == *merge* ]]; then
     exit 0
 fi
 
+
 # get only modified files
 add_array=($(git diff --cached --name-only --diff-filter=A | xargs))
 mod_array=($(git diff --cached --name-only --diff-filter=M | xargs))
@@ -68,34 +69,34 @@ echo "# Please make sure to comment on the modifications to each file" > ${COMMI
 echo "#" >> ${COMMIT_MSG_FILE}
 echo "#" >> ${COMMIT_MSG_FILE}
 echo "#" >> ${COMMIT_MSG_FILE}
-echo "# On Branch: ${curr_branch}" >> ${COMMIT_MSG_FILE}
+echo "#On Branch: ${curr_branch}" >> ${COMMIT_MSG_FILE}
 
 
 if [[ ${#add_array} -gt 0 ]]; then
-    echo "#" >> ${COMMIT_MSG_FILE}
+    # echo "#" >> ${COMMIT_MSG_FILE}
     for f in "${add_array[@]}"; do
-        echo "# added - ${f}:" >> ${COMMIT_MSG_FILE}
+        printf "#\tadded - ${f}:\n" >> ${COMMIT_MSG_FILE}
     done
 fi
 
 if [[ ${#mod_array} -gt 0 ]]; then
-    echo "#" >> ${COMMIT_MSG_FILE}
+    # echo "#" >> ${COMMIT_MSG_FILE}
     for f in "${mod_array[@]}"; do
-        echo "# modified - ${f}:" >> ${COMMIT_MSG_FILE}
+        printf "#\tmodified - ${f}:\n" >> ${COMMIT_MSG_FILE}
     done
 fi
 
 if [[ ${#ren_array} -gt 0 ]]; then
-    echo "#" >> ${COMMIT_MSG_FILE}
+    # echo "#" >> ${COMMIT_MSG_FILE}
     for f in "${ren_array[@]}"; do
-        echo "# renamed - ${f}:" >> ${COMMIT_MSG_FILE}
+        printf "#\trenamed - ${f}:\n" >> ${COMMIT_MSG_FILE}
     done
 fi
 
 if [[ ${#del_array} -gt 0 ]]; then
-    echo "#" >> ${COMMIT_MSG_FILE}
+    # echo "#" >> ${COMMIT_MSG_FILE}
     for f in "${del_array[@]}"; do
-        echo "# deleted - ${f}" >> ${COMMIT_MSG_FILE}
+        printf "#\tdeleted - ${f}\n" >> ${COMMIT_MSG_FILE}
     done
 fi
 
