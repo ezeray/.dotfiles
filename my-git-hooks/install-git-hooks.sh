@@ -33,6 +33,6 @@ do
     tmp_d=$( echo ${d} | tr -d '"')
     printf "Copying prepare-commit-msg hook to ${tmp_d}\n"
     cp ${curr_dir}/prepare-commit-msg ${tmp_d}/hooks/.
-    printf "Copying successfull\n"
+    printf "Copying successful\n"
 done
 
