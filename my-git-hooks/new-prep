@@ -1,0 +1,142 @@
+#!/bin/bash
+#
+# An example hook script to prepare the commit log message.
+# Called by "git commit" with the name of the file that has the
+# commit message, followed by the description of the commit
+# message's source.  The hook's purpose is to edit the commit
+# message file.  If the hook fails with a non-zero status,
+# the commit is aborted.
+#
+# To enable this hook, rename this file to "prepare-commit-msg".
+
+# This hook includes three examples. The first one removes the
+# "# Please enter the commit message..." help message.
+#
+# The second includes the output of "git diff --name-status -r"
+# into the message, just before the "git status" output.  It is
+# commented because it doesn't cope with --amend or with squashed
+# commits.
+#
+# The third example adds a Signed-off-by line to the message, that can
+# still be edited.  This is rarely a good idea.
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+SHA1=$3
+
+# debug prints to see the values passed to this
+# printf "Printing prepare-commig-msg ARGS FOR DEBUG\n\n\n\n\n"
+# printf "arg 1: commit msg file - ${1}\n"
+# printf "arg 2: commit source - ${2}\n"
+# printf "arg 3: SHA1 - ${3}\n\n\n\n\n"
+
+# if we're dealing with a commit amend, we keep the same git message
+if [[ "${COMMIT_SOURCE}" == *commit* ]]; then
+    exit 0
+fi
+
+
+# if the commit was aborted we load the previously written message to avoid
+# losing what the developer had previously written
+
+TMP_FILE=~/.tmp_aborted_commit_msg
+if [[ -f ${TMP_FILE} ]]; then
+    cat ${TMP_FILE} > ${COMMIT_MSG_FILE}
+    rm ${TMP_FILE}
+    exit 0
+fi
+
+original_content=$(cat ${COMMIT_MSG_FILE})
+curr_branch=$(git rev-parse --abbrev-ref HEAD)
+
+# this is for rebasing, because HEAD is basically detached so the 
+# rev-parse just returns HEAD, so we gotta parse the branch list and get
+# the one that is being rebased
+if [[ ${curr_branch} == "HEAD" ]]; then
+    b_name=$(git branch --list | grep "rebasing")
+    if [[ -n ${b_name} ]]
+    then
+        curr_branch=$(git branch --list | grep "rebasing" | cut -d ' ' -f 5 | cut -d ')' -f 1)
+    fi
+fi
+
+# if someone passed an -m message we just add the branches
+#
+# additionally, we gotta process when a commit is getting rehased in a rebase
+# because an earlier commit has been edited and amended. the commit message
+# will come with the `message`source, so in that case we just gotta let the
+# message pass without any modification.
+# how to identify? we can grep the COMMIT_MSG_FILE and see if it has already
+# been filled out by seeing if there is already a branch name in there
+if [[ "${COMMIT_SOURCE}" == *message* ]]; then
+    has_branch=$(grep "On Branch" ${COMMIT_MSG_FILE})
+    if [[ -n ${has_branch} ]]; then
+        exit 0
+    fi
+    msg_flag=$(cat ${COMMIT_MSG_FILE})
+    printf "On Branch ${curr_branch}\n" > ${COMMIT_MSG_FILE}
+    printf "${msg_flag}\n" >> ${COMMIT_MSG_FILE}
+    exit 0
+fi
+
+# if a merge, we just want to specify the branches being merged
+if [[ "${COMMIT_SOURCE}" == *merge* ]]; then
+    printf "On Branch ${curr_branch}\n" > ${COMMIT_MSG_FILE}
+    printf "${original_content}\n" >> ${COMMIT_MSG_FILE}
+    exit 0
+fi
+
+
+# get only modified files
+add_array=($(git diff --cached --name-only --diff-filter=A | xargs))
+mod_array=($(git diff --cached --name-only --diff-filter=M | xargs))
+del_array=($(git diff --cached --name-only --diff-filter=D | xargs))
+ren_array=($(git diff --cached --name-only --diff-filter=R | xargs))
+
+printf "# Please make sure to comment on the modifications to each file if relevant\n" > ${COMMIT_MSG_FILE}
+printf "#On Branch: ${curr_branch}\n" >> ${COMMIT_MSG_FILE}
+printf "#\n#\n#\n" >> ${COMMIT_MSG_FILE}
+
+
+if [[ ${#add_array} -gt 0 ]]; then
+    for f in "${add_array[@]}"; do
+        printf "#\tadded - ${f}:\n" >> ${COMMIT_MSG_FILE}
+    done
+fi
+
+if [[ ${#mod_array} -gt 0 ]]; then
+    for f in "${mod_array[@]}"; do
+        printf "#\tmodified - ${f}:\n" >> ${COMMIT_MSG_FILE}
+    done
+fi
+
+if [[ ${#ren_array} -gt 0 ]]; then
+    for f in "${ren_array[@]}"; do
+        printf "#\trenamed - ${f}:\n" >> ${COMMIT_MSG_FILE}
+    done
+fi
+
+if [[ ${#del_array} -gt 0 ]]; then
+    for f in "${del_array[@]}"; do
+        printf "#\tdeleted - ${f}\n" >> ${COMMIT_MSG_FILE}
+    done
+fi
+
+
+
+# /usr/bin/perl -i.bak -ne 'print unless(m/^. Please enter the commit message/..m/^#$/)' "$COMMIT_MSG_FILE"
+
+# case "$COMMIT_SOURCE,$SHA1" in
+#  ,|template,)
+#    /usr/bin/perl -i.bak -pe '
+#       print "\n" . `git diff --cached --name-status -r`
+# 	 if /^#/ && $first++ == 0' "$COMMIT_MSG_FILE" ;;
+#  *) ;;
+# esac
+
+# SOB=$(git var GIT_COMMITTER_IDENT | sed -n 's/^\(.*>\).*$/Signed-off-by: \1/p')
+# git interpret-trailers --in-place --trailer "$SOB" "$COMMIT_MSG_FILE"
+# if test -z "$COMMIT_SOURCE"
+# then
+#   /usr/bin/perl -i.bak -pe 'print "\n" if !$first_line++' "$COMMIT_MSG_FILE"
+# fi
